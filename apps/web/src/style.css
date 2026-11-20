@@ -1,3 +1,28 @@
+.theme-emerald {
+  --felt: #23654b;
+  --felt-dark: #092b20;
+  --rail: #2c1e13;
+}
+.theme-midnight {
+  --felt: #263753;
+  --felt-dark: #121a31;
+  --rail: #191922;
+}
+.theme-burgundy {
+  --felt: #714051;
+  --felt-dark: #341b2a;
+  --rail: #2f1a1d;
+}
+.theme-modern {
+  --felt: #235d54;
+  --felt-dark: #082c2a;
+  --rail: #12211e;
+}
+.theme-minimal {
+  --felt: #3e5752;
+  --felt-dark: #293e39;
+  --rail: #252e28;
+}
 :root {
   color-scheme: dark;
   font-family: 'DM Sans Variable', system-ui, sans-serif;

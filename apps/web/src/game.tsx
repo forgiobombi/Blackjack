@@ -292,7 +292,7 @@ export default function Game({ id }: { id: string }) {
             </span>
             <span>
               <Icon name="people" size={14} />
-              {view.spectators} {t('spectators').toLowerCase()}
+              {t(view.spectators === 1 ? 'spectatorOne' : 'spectatorCount', { n: view.spectators })}
             </span>
           </div>
         </div>
