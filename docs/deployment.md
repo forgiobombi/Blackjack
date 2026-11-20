@@ -62,7 +62,7 @@ Run **Deploy Cloudflare Worker** in GitHub Actions or **npm run deploy:worker**.
 
 Open repository **Settings → Pages** and select **GitHub Actions** as Source. Set **VITE_API_URL** to the Worker origin and optionally **VITE_SITE_NAME**. Run **Deploy GitHub Pages**. The workflow uses the Pages base path automatically. Invitation fragments work beneath that base path. Each deploy verifies that the public HTTPS URL serves its commit. While the repository is still configured to deploy from a branch, the Actions workflow waits for that build to finish first.
 
-The Pages build accepts **VITE_API_URL** and **VITE_SITE_NAME** as repository variables or as secrets in **production**. Both values are public in the built site.
+The Pages build accepts **VITE_API_URL** and **VITE_SITE_NAME** as repository variables or as secrets in **production**. Both values are public in the built site. For a **workers.dev** origin the deployment workflows use the Worker name from **apps/worker/wrangler.jsonc** and the Cloudflare account subdomain from **VITE_API_URL**. A custom Worker domain can be entered directly.
 
 For a custom domain, use the records shown in Pages settings and turn on **Enforce HTTPS** after GitHub issues its certificate. Set **APP_URL** and the Supabase Site URL to the same HTTPS frontend address.
 

@@ -35,11 +35,26 @@ jobs:
           SUPABASE_URL: ${{ vars.SUPABASE_URL || secrets.SUPABASE_URL }}
           SUPABASE_PUBLISHABLE_KEY: ${{ vars.SUPABASE_PUBLISHABLE_KEY || secrets.SUPABASE_PUBLISHABLE_KEY }}
           AUTH_BRIDGE_KEY: ${{ secrets.AUTH_BRIDGE_KEY }}
+      - name: Resolve the public Worker origin
+        id: worker-origin
+        env:
+          VITE_API_URL: ${{ vars.VITE_API_URL || secrets.VITE_API_URL }}
+        run: node scripts/resolve-worker-origin.mjs
       - name: Verify the public health endpoint
         env:
-          WORKER_URL: ${{ vars.VITE_API_URL || secrets.VITE_API_URL }}
+          WORKER_URL: ${{ steps.worker-origin.outputs.origin }}
+          APP_URL: ${{ vars.APP_URL || secrets.APP_URL }}
+        shell: bash
         run: |
           if [[ -n "$WORKER_URL" ]]; then
+            app_origin=$(node -p 'new URL(process.env.APP_URL).origin')
             curl --proto '=https' --retry 4 --retry-all-errors --max-time 15 \
-              --fail-with-body --silent --show-error -- "${WORKER_URL%/}/api/health"
+              --fail --silent --show-error -H "Origin: $app_origin" -- "$WORKER_URL/api/health" |
+              node -e '
+                const health = JSON.parse(require("node:fs").readFileSync(0, "utf8"))
+                if (health.status !== "ok" || health.database !== true || health.authConfigured !== true) {
+                  throw new Error("Blackjack API, D1, or Auth settings are unavailable")
+                }
+                console.log("Blackjack API, D1, and Auth configuration verified")
+              '
           fi
