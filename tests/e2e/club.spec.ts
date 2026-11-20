@@ -24,7 +24,11 @@ test('Two browsers play from an invitation and recover a mobile seat', async ({
   await page.goto(BASE)
   await expect(page.getByRole('heading', { name: 'Blackjack Royale.' })).toBeVisible()
   await expect(page.locator('.hero-photo')).toHaveJSProperty('complete', true)
-  await page.screenshot({ path: info.outputPath('landing-desktop.png'), fullPage: true })
+  await page.screenshot({
+    path: info.outputPath('landing-desktop.png'),
+    fullPage: true,
+    animations: 'disabled',
+  })
   await signIn(page)
   await page.getByRole('link', { name: 'Create table', exact: true }).click()
   await page.getByLabel('Table name', { exact: true }).fill('The Emerald Room')
@@ -62,7 +66,7 @@ test('Two browsers play from an invitation and recover a mobile seat', async ({
     await friend.getByLabel('Codice ricevuto via email').fill(testCode)
     await friend.getByRole('button', { name: 'Continua' }).click()
     await friend.getByRole('button', { name: 'Entra al tavolo' }).click()
-    await expect(friend.getByRole('heading', { name: 'The Emerald Room' })).toBeVisible()
+    await expect(friend.locator('.casino-board')).toBeVisible()
     await friend.screenshot({ path: info.outputPath('table-mobile.png'), fullPage: true })
     await expect
       .poll(() => friend.evaluate(() => document.documentElement.scrollWidth - window.innerWidth))
@@ -82,17 +86,21 @@ test('Two browsers play from an invitation and recover a mobile seat', async ({
     await friend.reload()
     await expect(friend.locator('.my-hands .playing-card')).toHaveCount(2)
     await expect(friend.locator('.my-hands .playing-card')).toHaveText(cards)
-    for (const [client, label] of [
-      [page, 'Stand'],
-      [friend, 'Stai'],
-    ] as const) {
-      const stand = client.getByRole('button', { name: label, exact: true })
-      const result = client.getByText(client === page ? 'Round complete' : 'Mano conclusa', {
-        exact: true,
-      })
-      await expect(stand.or(result)).toBeVisible()
-      if (await stand.isVisible()) await stand.click()
-    }
+    const standButtons = [
+      page.getByRole('button', { name: 'Stand', exact: true }),
+      friend.getByRole('button', { name: 'Stai', exact: true }),
+    ]
+    await expect
+      .poll(
+        async () => {
+          for (const stand of standButtons) {
+            if ((await stand.isVisible()) && (await stand.isEnabled())) await stand.click()
+          }
+          return page.getByText('Round complete', { exact: true }).isVisible()
+        },
+        { timeout: 12_000 },
+      )
+      .toBe(true)
     await expect(page.getByText('Round complete', { exact: true })).toBeVisible()
     await expect(friend.getByText('Mano conclusa', { exact: true })).toBeVisible()
     await page.getByRole('button', { name: 'Next round', exact: true }).click()
@@ -131,6 +139,7 @@ test('Password recovery and subsequent login work on the authentication origin',
   await expect(page.getByRole('heading', { name: 'The lounge' })).toBeVisible()
   await page.goto(BASE + '#/signout')
   await page.getByRole('main').getByRole('button', { name: 'Sign out' }).click()
+  await expect(page.getByRole('heading', { name: 'Blackjack Royale.' })).toBeVisible()
   await page.goto(BASE + '#/signin')
   await page.getByRole('main').getByRole('button', { name: 'Sign in', exact: true }).click()
   await page.getByRole('link', { name: 'Forgot password?' }).click()

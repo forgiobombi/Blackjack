@@ -427,6 +427,7 @@ function authPage(
       t.lobby +
       '</a></main></html>',
     fields.status,
+    env.APP_URL ? appUrl(env).origin : undefined,
   )
 }
 

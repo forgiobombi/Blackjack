@@ -335,7 +335,7 @@ hr {
   width: min(100%, 1460px);
   height: 100%;
   object-fit: cover;
-  object-position: center 47%;
+  object-position: center 28%;
   z-index: -2;
 }
 .hero::after {

@@ -13,14 +13,17 @@ export function json(payload: unknown, status = 200) {
   return Response.json(payload, { status, headers: COMMON })
 }
 
-export function html(payload: string, status = 200) {
+export function html(payload: string, status = 200, returnOrigin?: string) {
   return new Response(payload, {
     status,
     headers: {
       ...COMMON,
       'Content-Type': 'text/html; charset=utf-8',
+      'Referrer-Policy': 'same-origin',
       'Content-Security-Policy':
-        "default-src 'none'; style-src 'unsafe-inline'; form-action 'self'; frame-ancestors 'none'; base-uri 'none'",
+        "default-src 'none'; style-src 'unsafe-inline'; form-action 'self'" +
+        (returnOrigin ? ' ' + returnOrigin : '') +
+        "; frame-ancestors 'none'; base-uri 'none'",
     },
   })
 }
