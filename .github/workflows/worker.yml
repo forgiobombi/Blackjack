@@ -1,0 +1,39 @@
+name: Deploy Cloudflare Worker
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: blackjack-worker-production
+  cancel-in-progress: false
+
+jobs:
+  worker:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    environment: production
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci
+      - run: npm test
+      - run: npm run deploy:worker
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+          D1_DATABASE_ID: ${{ vars.D1_DATABASE_ID }}
+          APP_URL: ${{ vars.APP_URL }}
+          SUPABASE_URL: ${{ vars.SUPABASE_URL }}
+          SUPABASE_PUBLISHABLE_KEY: ${{ vars.SUPABASE_PUBLISHABLE_KEY }}
+          AUTH_BRIDGE_KEY: ${{ secrets.AUTH_BRIDGE_KEY }}
+      - name: Verify the public health endpoint
+        if: vars.VITE_API_URL != ''
+        env:
+          WORKER_URL: ${{ vars.VITE_API_URL }}
+        run: curl --retry 4 --retry-all-errors --fail-with-body --silent --show-error "$WORKER_URL/api/health"

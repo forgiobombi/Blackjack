@@ -1,0 +1,4 @@
+APP_URL=http://localhost:5173/
+SUPABASE_URL=http://127.0.0.1:54321
+SUPABASE_PUBLISHABLE_KEY=your_local_publishable_or_anon_key
+AUTH_BRIDGE_KEY=replace_with_openssl_rand_hex_32
