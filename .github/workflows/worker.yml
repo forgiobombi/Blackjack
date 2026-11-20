@@ -1,5 +1,8 @@
 name: Deploy Cloudflare Worker
 on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/worker.yml']
   workflow_dispatch:
 
 permissions:
@@ -26,14 +29,17 @@ jobs:
       - run: npm run deploy:worker
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
-          D1_DATABASE_ID: ${{ vars.D1_DATABASE_ID }}
-          APP_URL: ${{ vars.APP_URL }}
-          SUPABASE_URL: ${{ vars.SUPABASE_URL }}
-          SUPABASE_PUBLISHABLE_KEY: ${{ vars.SUPABASE_PUBLISHABLE_KEY }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID || secrets.CLOUDFLARE_ACCOUNT_ID }}
+          D1_DATABASE_ID: ${{ vars.D1_DATABASE_ID || secrets.D1_DATABASE_ID }}
+          APP_URL: ${{ vars.APP_URL || secrets.APP_URL }}
+          SUPABASE_URL: ${{ vars.SUPABASE_URL || secrets.SUPABASE_URL }}
+          SUPABASE_PUBLISHABLE_KEY: ${{ vars.SUPABASE_PUBLISHABLE_KEY || secrets.SUPABASE_PUBLISHABLE_KEY }}
           AUTH_BRIDGE_KEY: ${{ secrets.AUTH_BRIDGE_KEY }}
       - name: Verify the public health endpoint
-        if: vars.VITE_API_URL != ''
         env:
-          WORKER_URL: ${{ vars.VITE_API_URL }}
-        run: curl --retry 4 --retry-all-errors --fail-with-body --silent --show-error "$WORKER_URL/api/health"
+          WORKER_URL: ${{ vars.VITE_API_URL || secrets.VITE_API_URL }}
+        run: |
+          if [[ -n "$WORKER_URL" ]]; then
+            curl --proto '=https' --retry 4 --retry-all-errors --max-time 15 \
+              --fail-with-body --silent --show-error -- "${WORKER_URL%/}/api/health"
+          fi

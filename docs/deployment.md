@@ -54,11 +54,15 @@ Record the returned database UUID. Wrangler creates the SQLite Durable Object na
 | AUTH_BRIDGE_KEY          | Environment secret   | Generate with **openssl rand -hex 32** and retain across deployments                                  |
 | VITE_API_URL             | Repository variable  | HTTPS Worker origin, without a trailing slash                                                         |
 
+The workflows also read these settings from **Environment secrets** in **production** when the corresponding variable is empty. **CLOUDFLARE_API_TOKEN** and **AUTH_BRIDGE_KEY** always use secrets.
+
 Run **Deploy Cloudflare Worker** in GitHub Actions or **npm run deploy:worker**. Verify the Worker at **/api/health** and test real verification email delivery with a non-team email address. The Worker derives CORS and socket-origin policy from **APP_URL**. The Pages build adds the Worker origin to its Content Security Policy.
 
 ## 3. Deploy GitHub Pages
 
 Open repository **Settings → Pages** and select **GitHub Actions** as Source. Set **VITE_API_URL** to the Worker origin and optionally **VITE_SITE_NAME**. Run **Deploy GitHub Pages**. The workflow uses the Pages base path automatically. Invitation fragments work beneath that base path. Each deploy verifies that the public HTTPS URL serves its commit. While the repository is still configured to deploy from a branch, the Actions workflow waits for that build to finish first.
+
+The Pages build accepts **VITE_API_URL** and **VITE_SITE_NAME** as repository variables or as secrets in **production**. Both values are public in the built site.
 
 For a custom domain, use the records shown in Pages settings and turn on **Enforce HTTPS** after GitHub issues its certificate. Set **APP_URL** and the Supabase Site URL to the same HTTPS frontend address.
 

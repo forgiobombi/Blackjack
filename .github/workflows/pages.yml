@@ -16,6 +16,7 @@ jobs:
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 8
+    environment: production
     permissions:
       contents: read
       pages: read
@@ -34,8 +35,8 @@ jobs:
       - run: npm run build
         env:
           VITE_BASE: ${{ steps.pages.outputs.base_path }}/
-          VITE_API_URL: ${{ vars.VITE_API_URL }}
-          VITE_SITE_NAME: ${{ vars.VITE_SITE_NAME }}
+          VITE_API_URL: ${{ vars.VITE_API_URL || secrets.VITE_API_URL }}
+          VITE_SITE_NAME: ${{ vars.VITE_SITE_NAME || secrets.VITE_SITE_NAME }}
           VITE_BUILD_REVISION: ${{ github.sha }}
       - name: Wait for a branch-source Pages build when applicable
         env:
