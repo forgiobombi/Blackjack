@@ -5,6 +5,9 @@ import { defineConfig, loadEnv } from 'vite'
 const envDir = fileURLToPath(new URL('../..', import.meta.url))
 export default defineConfig(({ command, mode }) => {
   const env = { ...loadEnv(mode, envDir, 'VITE_'), ...process.env }
+  const revision = /^[0-9a-f]{40}$/.test(env.VITE_BUILD_REVISION ?? '')
+    ? env.VITE_BUILD_REVISION
+    : undefined
   const api = env.VITE_API_URL ? new URL(env.VITE_API_URL) : undefined
   if (api && !['https:', 'http:'].includes(api.protocol))
     throw new Error('VITE_API_URL must use HTTPS or local HTTP')
@@ -28,7 +31,8 @@ export default defineConfig(({ command, mode }) => {
                     '<meta name="referrer" content="no-referrer" />',
                     "<meta name=\"referrer\" content=\"no-referrer\" /><meta http-equiv=\"Content-Security-Policy\" content=\"default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data:; connect-src 'self'" +
                       connection +
-                      "; base-uri 'none'; object-src 'none'; form-action 'none'\" />",
+                      "; base-uri 'none'; object-src 'none'; form-action 'none'\" />" +
+                      (revision ? '<meta name="build-revision" content="' + revision + '" />' : ''),
                   ),
               }
             : undefined,

@@ -13,11 +13,13 @@ concurrency:
 
 jobs:
   build:
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 8
     permissions:
       contents: read
       pages: read
+      actions: read
     steps:
       - uses: actions/checkout@v6
       - uses: actions/setup-node@v6
@@ -34,6 +36,27 @@ jobs:
           VITE_BASE: ${{ steps.pages.outputs.base_path }}/
           VITE_API_URL: ${{ vars.VITE_API_URL }}
           VITE_SITE_NAME: ${{ vars.VITE_SITE_NAME }}
+          VITE_BUILD_REVISION: ${{ github.sha }}
+      - name: Wait for a branch-source Pages build when applicable
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          page_source=$(gh api "repos/$GITHUB_REPOSITORY/pages" --jq 'if .build_type == "legacy" then .source.branch else "" end')
+          if [[ "$page_source" != "$GITHUB_REF_NAME" ]]; then
+            exit 0
+          fi
+          for attempt in {1..30}; do
+            status=$(gh api "repos/$GITHUB_REPOSITORY/actions/runs?head_sha=$GITHUB_SHA&per_page=40" \
+              --jq '.workflow_runs | map(select(.name == "pages build and deployment")) | first | .status // ""')
+            if [[ "$status" == "completed" ]]; then
+              exit 0
+            fi
+            sleep 5
+          done
+          echo "::error::Branch-source Pages is still active. Set Settings > Pages > Source to GitHub Actions and retry."
+          exit 1
       - uses: actions/upload-pages-artifact@v4
         with:
           path: apps/web/dist
@@ -52,3 +75,20 @@ jobs:
     steps:
       - id: deployment
         uses: actions/deploy-pages@v4
+      - name: Verify the deployed Blackjack app over HTTPS
+        env:
+          SITE_URL: ${{ steps.deployment.outputs.page_url }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          site="https://${SITE_URL#*://}"
+          site="${site%/}/"
+          for attempt in {1..8}; do
+            html=$(curl --fail --silent --show-error --max-time 15 "${site}?revision=$GITHUB_SHA" || true)
+            if grep -Fq "name=\"build-revision\" content=\"$GITHUB_SHA\"" <<< "$html"; then
+              exit 0
+            fi
+            sleep 5
+          done
+          echo "::error::The public site did not return this Blackjack build."
+          exit 1
